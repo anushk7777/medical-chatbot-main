@@ -1,0 +1,6 @@
+import torch
+from datasets import load_dataset
+
+# Create speaker embeddings file
+embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
+torch.save(embeddings_dataset, "speaker_embeddings.pt")
