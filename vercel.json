@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt",
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{.git/**,.idea/**,.venv/**,__pycache__/**,data/**,medical-chatbot-main/**,output.mp3,response.wav,speaker_embeddings.pt,api.py,connect_memory_with_llm.py,create_memory_for_llm.py,create_speaker_embeddings.py,depression_assessment.py,disease_predictor.py,main.py,medibot.py,mental_health_tools.py,test_torch.py,Pipfile,Pipfile.lock,Pipfile.dev,Pipfile.dev.lock,vectorstore/db_faiss/index.pkl}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.py"
+    }
+  ]
+}
