@@ -1,6 +1,5 @@
 /*
-!api
-!api/**
+!app.py
 !config.py
 !deployment_api.py
 !rag_chat.py
