@@ -1,8 +1,13 @@
 /*
-!app.py
+!api
+!api/**
 !config.py
 !deployment_api.py
+!disease_predictor_light.py
+!index.html
+!app.js
 !rag_chat.py
+!styles.css
 !requirements-vercel.txt
 !vercel.json
 !vectorstore

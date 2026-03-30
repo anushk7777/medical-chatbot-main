@@ -13,6 +13,7 @@ from huggingface_hub import InferenceClient
 from pydantic import BaseModel
 
 import config
+from disease_predictor_light import get_disease_information, predict_diseases
 from rag_chat import generate_chat_answer
 
 load_dotenv()
@@ -21,6 +22,10 @@ load_dotenv()
 class ChatRequest(BaseModel):
     query: Optional[str] = None
     message: Optional[str] = None
+
+
+class SymptomsRequest(BaseModel):
+    symptoms: str
 
 
 app = FastAPI(title="Medical Chatbot API")
@@ -84,7 +89,7 @@ def retrieve_documents(prompt: str) -> List[Dict[str, object]]:
 
 @app.get("/")
 def root() -> Dict[str, str]:
-    return {"status": "ok", "message": "Medical chatbot API is running."}
+    return {"status": "ok", "message": "Medical chatbot API is running.", "ui": "Use the site root for the web app."}
 
 
 @app.get("/health")
@@ -117,4 +122,23 @@ def chat(request: ChatRequest) -> Dict[str, object]:
     return {
         "answer": answer,
         "sources": [doc.get("metadata", {}).get("source", "") for doc in documents],
+    }
+
+
+@app.post("/disease-predict")
+def disease_predict(request: SymptomsRequest) -> Dict[str, object]:
+    symptoms = request.symptoms.strip()
+    if not symptoms:
+        raise HTTPException(status_code=400, detail="Provide `symptoms`.")
+
+    predictions = predict_diseases(symptoms, top_n=5)
+    return {
+        "predictions": [
+            {
+                "disease": disease,
+                "probability": probability,
+                "info": get_disease_information(disease),
+            }
+            for disease, probability in predictions
+        ]
     }
