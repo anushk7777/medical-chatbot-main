@@ -2,7 +2,6 @@ import os
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import io
 import base64
 import traceback
@@ -16,7 +15,6 @@ from huggingface_hub import InferenceClient
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from dotenv import load_dotenv, find_dotenv
-from disease_predictor import DiseasePredictor
 from depression_assessment import PHQ9Assessment, VisualizationTools
 from mental_health_tools import MentalHealthAssessment
 import config
@@ -135,6 +133,8 @@ def get_vectorstore():
 
 @st.cache_resource
 def load_disease_predictor():
+    from disease_predictor import DiseasePredictor
+
     return DiseasePredictor()
 
 
@@ -206,12 +206,6 @@ def save_chat_history(messages):
 
 
 def main():
-    # Initialize disease predictor and assessment tools
-    disease_predictor = load_disease_predictor()
-    phq9_assessment = PHQ9Assessment()
-    mental_health_tools = MentalHealthAssessment()
-    visualization_tools = VisualizationTools()
-
     # Sidebar layout and content
     st.sidebar.title("🩺 MediBot")
     st.sidebar.image("https://img.icons8.com/color/96/000000/medical-doctor.png", width=100)
@@ -339,6 +333,7 @@ def main():
 
     # Disease Predictor mode
     elif app_mode == "🔍 Disease Predictor":
+        disease_predictor = load_disease_predictor()
         st.title("🔍 Disease Prediction Based on Symptoms")
         st.markdown("""
         Describe your symptoms in detail below, and I'll predict potential conditions 
@@ -423,6 +418,8 @@ def main():
 
     # Depression Assessment Mode
     elif app_mode == "📊 Depression Assessment":
+        phq9_assessment = PHQ9Assessment()
+        visualization_tools = VisualizationTools()
         st.title("📊 Depression Assessment Tool")
         st.markdown("""
         This tool uses the PHQ-9 (Patient Health Questionnaire), a validated screening tool for depression. 
@@ -486,6 +483,8 @@ def main():
 
     # Mental Health Tools mode
     elif app_mode == "📈 Mental Health Tools":
+        mental_health_tools = MentalHealthAssessment()
+        visualization_tools = VisualizationTools()
         st.title("📈 Mental Health Insights and Tools")
 
         tool_choice = st.radio("Select Tool:", [

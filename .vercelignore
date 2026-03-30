@@ -3,7 +3,7 @@
 !config.py
 !deployment_api.py
 !rag_chat.py
-!requirements.txt
+!requirements-vercel.txt
 !vercel.json
 !vectorstore
 !vectorstore/db_faiss
