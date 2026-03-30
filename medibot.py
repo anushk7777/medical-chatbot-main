@@ -5,25 +5,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import io
 import base64
+import traceback
 from gtts import gTTS
 import speech_recognition as sr
 import datetime
 import json
 import re
 from PIL import Image
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings, HuggingFaceEndpoint, ChatHuggingFace
 from langchain.chains import RetrievalQA
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
-from langchain_huggingface import HuggingFaceEndpoint
 from dotenv import load_dotenv, find_dotenv
 from disease_predictor import DiseasePredictor
 from depression_assessment import PHQ9Assessment, VisualizationTools
 from mental_health_tools import MentalHealthAssessment
+import config
 
 # Load environment variables
 load_dotenv(find_dotenv())
-DB_FAISS_PATH = "vectorstore/db_faiss/"
+DB_FAISS_PATH = config.DB_FAISS_PATH
 
 # Set up page configuration
 st.set_page_config(
@@ -127,7 +128,7 @@ st.markdown("""
 
 @st.cache_resource
 def get_vectorstore():
-    embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+    embedding_model = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
     db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
     return db
 
@@ -145,11 +146,14 @@ def set_custom_prompt(custom_prompt_template):
 def load_llm(huggingface_repo_id, HF_TOKEN):
     llm = HuggingFaceEndpoint(
         repo_id=huggingface_repo_id,
-        task='text-generation',
         temperature=0.5,
-        model_kwargs={"token": HF_TOKEN, "max_length": "512"}
+        huggingfacehub_api_token=HF_TOKEN,
+        max_new_tokens=512,
+        timeout=300
     )
-    return llm
+    # Use ChatHuggingFace wrapper to handle conversational vs text-generation tasks correctly
+    chat_model = ChatHuggingFace(llm=llm)
+    return chat_model
 
 
 def text_to_speech(text):
@@ -365,7 +369,7 @@ def main():
                     voice_text = speech_to_text()
                     if voice_text:
                         symptoms_text = voice_text
-                        st.experimental_rerun()
+                        st.rerun()
 
         if predict_button and symptoms_text:
             with st.spinner("Analyzing symptoms..."):
@@ -624,7 +628,7 @@ def main():
     # Footer
     st.markdown("""
     <div class="footer">
-        MediBot Advanced Medical Assistant © 2025
+        MediBot Advanced Medical Assistant By Anushk and Parth
     </div>
     """, unsafe_allow_html=True)
 
@@ -641,8 +645,12 @@ def process_user_query(prompt):
     Start the answer directly. No small talk please.
     """
 
-    HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
+    HUGGINGFACE_REPO_ID = config.HUGGINGFACE_REPO_ID
     HF_TOKEN = os.environ.get("HF_TOKEN")
+
+    if not HF_TOKEN:
+        st.error("HF_TOKEN not found. Please check your .env file.")
+        return
 
     try:
         vectorstore = get_vectorstore()
@@ -650,8 +658,10 @@ def process_user_query(prompt):
             st.error("Failed to load the vector store")
             return
 
+        llm = load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, HF_TOKEN=HF_TOKEN)
+        
         qa_chain = RetrievalQA.from_chain_type(
-            llm=load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, HF_TOKEN=HF_TOKEN),
+            llm=llm,
             chain_type="stuff",
             retriever=vectorstore.as_retriever(search_kwargs={'k': 3}),
             return_source_documents=True,
@@ -699,6 +709,7 @@ def process_user_query(prompt):
 
     except Exception as e:
         st.error(f"Error: {str(e)}")
+        st.info("Technical details: " + traceback.format_exc())
 
 
 if __name__ == "__main__":

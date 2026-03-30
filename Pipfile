@@ -10,6 +10,18 @@ langchain-huggingface = "*"
 faiss-cpu = "*"
 pypdf = "*"
 streamlit = "*"
+sentence-transformers = "*"
+fastapi = "*"
+uvicorn = "*"
+numpy = "*"
+pandas = "*"
+matplotlib = "*"
+gtts = "*"
+speechrecognition = "*"
+python-dotenv = "*"
+pillow = "*"
+plotly = "*"
+scikit-learn = "*"
 
 [dev-packages]
 

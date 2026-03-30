@@ -1,3 +1,4 @@
+import config
 import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,8 +7,7 @@ from dotenv import load_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_core.prompts import PromptTemplate
-from langchain_huggingface import HuggingFaceEndpoint
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace, HuggingFaceEmbeddings
 
 # Load env vars
 load_dotenv()
@@ -41,22 +41,24 @@ Start the answer directly. No small talk please.
 
 # Load LLM and vectorstore
 HF_TOKEN = os.environ.get("HF_TOKEN")
-HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
-DB_FAISS_PATH = "vectorstore/db_faiss/"
+HUGGINGFACE_REPO_ID = config.HUGGINGFACE_REPO_ID
+DB_FAISS_PATH = config.DB_FAISS_PATH
 
-embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+embedding_model = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
 vectorstore = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
 
 def set_custom_prompt(template):
     return PromptTemplate(template=template, input_variables=["context", "question"])
 
 def load_llm():
-    return HuggingFaceEndpoint(
+    llm = HuggingFaceEndpoint(
         repo_id=HUGGINGFACE_REPO_ID,
-        task='text-generation',
         temperature=0.5,
-        model_kwargs={"token": HF_TOKEN, "max_length": "512"}
+        huggingfacehub_api_token=HF_TOKEN,
+        max_new_tokens=512,
+        timeout=300
     )
+    return ChatHuggingFace(llm=llm)
 
 qa_chain = RetrievalQA.from_chain_type(
     llm=load_llm(),
