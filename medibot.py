@@ -12,15 +12,15 @@ import datetime
 import json
 import re
 from PIL import Image
-from langchain_huggingface import HuggingFaceEmbeddings, HuggingFaceEndpoint, ChatHuggingFace
-from langchain.chains import RetrievalQA
+from huggingface_hub import InferenceClient
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv, find_dotenv
 from disease_predictor import DiseasePredictor
 from depression_assessment import PHQ9Assessment, VisualizationTools
 from mental_health_tools import MentalHealthAssessment
 import config
+from rag_chat import generate_chat_answer, retrieve_documents
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -138,22 +138,12 @@ def load_disease_predictor():
     return DiseasePredictor()
 
 
-def set_custom_prompt(custom_prompt_template):
-    prompt = PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
-    return prompt
-
-
-def load_llm(huggingface_repo_id, HF_TOKEN):
-    llm = HuggingFaceEndpoint(
-        repo_id=huggingface_repo_id,
-        temperature=0.5,
-        huggingfacehub_api_token=HF_TOKEN,
-        max_new_tokens=512,
-        timeout=300
-    )
-    # Use ChatHuggingFace wrapper to handle conversational vs text-generation tasks correctly
-    chat_model = ChatHuggingFace(llm=llm)
-    return chat_model
+@st.cache_resource
+def get_hf_client():
+    hf_token = os.environ.get("HF_TOKEN")
+    if not hf_token:
+        raise RuntimeError("HF_TOKEN not found. Please check your .env file.")
+    return InferenceClient(token=hf_token, timeout=120)
 
 
 def text_to_speech(text):
@@ -636,41 +626,19 @@ def main():
 def process_user_query(prompt):
     """Process the user query and get response from the LLM"""
 
-    CUSTOM_PROMPT_TEMPLATE = """
-    Use the pieces of information provided in the context to answer user's question.
-    If you dont know the answer, just say that you dont know, dont try to make up an answer.
-    Dont provide anything out of the given context.
-    Context: {context}
-    Question: {question}
-    Start the answer directly. No small talk please.
-    """
-
-    HUGGINGFACE_REPO_ID = config.HUGGINGFACE_REPO_ID
-    HF_TOKEN = os.environ.get("HF_TOKEN")
-
-    if not HF_TOKEN:
-        st.error("HF_TOKEN not found. Please check your .env file.")
-        return
-
     try:
         vectorstore = get_vectorstore()
         if vectorstore is None:
             st.error("Failed to load the vector store")
             return
 
-        llm = load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, HF_TOKEN=HF_TOKEN)
-        
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=vectorstore.as_retriever(search_kwargs={'k': 3}),
-            return_source_documents=True,
-            chain_type_kwargs={'prompt': set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)}
+        source_documents = retrieve_documents(vectorstore, prompt)
+        result = generate_chat_answer(
+            prompt=prompt,
+            source_documents=source_documents,
+            client=get_hf_client(),
+            model_name=config.HUGGINGFACE_REPO_ID,
         )
-
-        response = qa_chain.invoke({'query': prompt})
-        result = response["result"]
-        source_documents = response["source_documents"]
 
         # Format source documents for display
         result_to_show = result + "\nSource Docs:" + str(source_documents)
