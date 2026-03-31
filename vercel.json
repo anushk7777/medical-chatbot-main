@@ -4,23 +4,13 @@
   "installCommand": "pip install --upgrade pip && pip install -r requirements-vercel.txt",
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
-    { "src": "public/**", "use": "@vercel/static" },
-    { "src": "*.html", "use": "@vercel/static" },
-    { "src": "*.js", "use": "@vercel/static" },
-    { "src": "*.css", "use": "@vercel/static" }
+    { "src": "**", "use": "@vercel/static" }
   ],
   "routes": [
     {
       "src": "^/api/(.*)",
       "dest": "/api/index.py"
-    },
-    {
-      "src": "^/(.*\\.(js|css|png|jpg|jpeg|svg|ico|json))$",
-      "dest": "/$1"
-    },
-    {
-      "src": "^/(.*)$",
-      "dest": "/index.html"
     }
-  ]
+  ],
+  "cleanUrls": true
 }
