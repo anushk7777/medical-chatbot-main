@@ -1,4 +1,22 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "pip install --upgrade pip && pip install --no-cache-dir -r requirements-vercel.txt"
+  "version": 2,
+  "installCommand": "pip install --upgrade pip && pip install --no-cache-dir -r requirements-vercel.txt",
+  "builds": [
+    { "src": "api/*.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    {
+      "src": "^/api/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "^/(.*\\.(js|css|png|jpg|jpeg|svg|ico|json))$",
+      "dest": "/$1"
+    },
+    {
+      "src": "^/(.*)$",
+      "dest": "/index.html"
+    }
+  ]
 }
