@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MediBot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Medical Assistant</p>
+        <h1>MediBot</h1>
+        <p class="hero-text">
+          Chat with the medical knowledge base, run a lightweight symptom check,
+          and use the built-in mental health assessment tools from a single deployed app.
+        </p>
+        <div class="hero-tags">
+          <span>Chat RAG</span>
+          <span>Disease Predictor</span>
+          <span>PHQ-9</span>
+          <span>Risk Insights</span>
+        </div>
+      </div>
+      <aside class="hero-panel">
+        <h2>Before you rely on an answer</h2>
+        <ul>
+          <li>This app is informational, not a diagnosis.</li>
+          <li>Urgent symptoms need urgent clinical care.</li>
+          <li>Predictions are probability-based, not definitive.</li>
+        </ul>
+      </aside>
+    </header>
+
+    <nav class="tab-bar" aria-label="App sections">
+      <button class="tab-button active" data-tab="chat">Chat</button>
+      <button class="tab-button" data-tab="predictor">Disease Predictor</button>
+      <button class="tab-button" data-tab="phq9">PHQ-9</button>
+      <button class="tab-button" data-tab="insights">Mental Health Insights</button>
+    </nav>
+
+    <main>
+      <section class="panel active" id="panel-chat">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Knowledge Base Chat</p>
+            <h2>Ask a medical question</h2>
+          </div>
+          <div class="chip-row">
+            <button class="chip prompt-chip" data-prompt="What is depression?">What is depression?</button>
+            <button class="chip prompt-chip" data-prompt="What causes fever?">What causes fever?</button>
+            <button class="chip prompt-chip" data-prompt="How is migraine treated?">How is migraine treated?</button>
+          </div>
+        </div>
+
+        <div class="chat-layout">
+          <div class="chat-card">
+            <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
+            <form id="chatForm" class="chat-form">
+              <label class="sr-only" for="chatInput">Ask a medical question</label>
+              <textarea id="chatInput" rows="3" placeholder="Type a question about symptoms, conditions, causes, or treatment."></textarea>
+              <div class="chat-actions">
+                <span id="chatStatus" class="status-text">Ready</span>
+                <button type="submit" class="primary-button">Send</button>
+              </div>
+            </form>
+          </div>
+
+          <aside class="side-card">
+            <h3>How answers are built</h3>
+            <ol>
+              <li>Your question is matched against the vector database.</li>
+              <li>Top source chunks are passed to the language model.</li>
+              <li>Sources are shown so you can inspect what informed the answer.</li>
+            </ol>
+            <div id="sourceList" class="source-list"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-predictor">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Lightweight Triage</p>
+            <h2>Describe your symptoms</h2>
+          </div>
+        </div>
+        <div class="grid-two">
+          <div class="card">
+            <label for="symptomInput" class="field-label">Symptoms</label>
+            <textarea id="symptomInput" rows="7" placeholder="Example: I have high fever, body ache, cough, and difficulty breathing for 3 days."></textarea>
+            <div class="inline-actions">
+              <button id="predictButton" class="primary-button" type="button">Predict Conditions</button>
+              <span id="predictStatus" class="status-text">Uses lightweight symptom scoring for deployment.</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Prediction Results</h3>
+            <div id="predictionResults" class="stack-list empty-state">Enter symptoms to see possible conditions.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-phq9">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Validated Screening</p>
+            <h2>PHQ-9 Depression Assessment</h2>
+          </div>
+        </div>
+        <div class="grid-two">
+          <div class="card">
+            <p class="section-copy">Over the last 2 weeks, how often have you been bothered by the following problems?</p>
+            <form id="phq9Form" class="question-list"></form>
+            <div class="inline-actions">
+              <button id="phq9Submit" class="primary-button" type="button">Calculate Score</button>
+              <button id="phq9Reset" class="ghost-button" type="button">Reset</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Your Result</h3>
+            <div id="phq9Result" class="empty-state">Complete the questionnaire to see your score and recommendations.</div>
+            <div class="history-block">
+              <div class="history-head">
+                <h4>Recent Scores</h4>
+                <span class="status-text">Stored in your browser only.</span>
+              </div>
+              <div id="phq9History" class="history-bars"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-insights">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Mental Health Tools</p>
+            <h2>Risk outlook and treatment snapshots</h2>
+          </div>
+        </div>
+
+        <div class="grid-two">
+          <div class="card">
+            <h3>Risk Factor Analysis</h3>
+            <form id="riskForm" class="grid-form">
+              <label>Gender
+                <select name="gender">
+                  <option>Female</option>
+                  <option>Male</option>
+                </select>
+              </label>
+              <label>Age Group
+                <select name="age_group">
+                  <option>18-29</option>
+                  <option>30-44</option>
+                  <option>45-59</option>
+                  <option>60+</option>
+                </select>
+              </label>
+              <label>Family History
+                <select name="family_history">
+                  <option>Yes</option>
+                  <option>No</option>
+                </select>
+              </label>
+              <label>Chronic Illness
+                <select name="chronic_illness">
+                  <option>Yes</option>
+                  <option>No</option>
+                </select>
+              </label>
+              <label>Recent Stressful Event
+                <select name="recent_trauma">
+                  <option>Yes</option>
+                  <option>No</option>
+                </select>
+              </label>
+              <label>Social Support
+                <select name="social_support">
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                </select>
+              </label>
+            </form>
+            <div class="inline-actions">
+              <button id="riskButton" class="primary-button" type="button">Analyze Risk</button>
+            </div>
+            <div id="riskResult" class="risk-result empty-state">Run the analysis to see a risk score and tailored guidance.</div>
+          </div>
+
+          <div class="card">
+            <div class="insight-block">
+              <div class="insight-head">
+                <h3>Depression Course Patterns</h3>
+                <select id="patternSelect"></select>
+              </div>
+              <div id="patternChart" class="mini-chart"></div>
+              <div id="patternDescription" class="section-copy"></div>
+            </div>
+
+            <div class="insight-block">
+              <div class="insight-head">
+                <h3>Treatment Comparison</h3>
+                <select id="treatmentSelect"></select>
+              </div>
+              <div id="treatmentChart" class="bar-chart"></div>
+              <div id="treatmentNotes" class="note-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>MediBot is not a substitute for professional medical advice, diagnosis, or treatment.</p>
+    </footer>
+  </div>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
+
